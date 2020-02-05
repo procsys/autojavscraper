@@ -1,28 +1,25 @@
 #!/usr/bin/env bash
 
 SCRAPER_URL='https://github.com/DoctorD1501/JAVMovieScraper/releases/download/v0.3.7/JAVMovieScraper-v0.3.7.jar'
-SCRAPER_BIN='/usr/local/bin/JAVMovieScraper.jar'
-
-[[ ! -f $SCRAPER_BIN ]] && curl -K $SCRAPER -o $SCRAPER_BIN
+SCRAPER_BIN="$HOME/.JAVMovieScraper.jar"
+[[ ! -f $SCRAPER_BIN ]] && echo "No scraper found, downloading..." && wget -q -O $SCRAPER_BIN $SCRAPER_URL
 
 DIR=${1?"I need a directory"}
 FILES=$(ls -1 $DIR | grep -v -E "(.nfo|.jpg|.xml)")
 DONE_FILES=$(ls -1 $DIR | grep -E "(.nfo|.jpg|.xml)" | grep -v -E "(settings|fanart|poster)")
-SLEEP=${SLEEP:=60}
+
+SCRAPER=${SCRAPER:=r18}
 CMD="java -jar $SCRAPER_BIN -scrape $SCRAPER"
-
+SLEEP=${SLEEP:=60}
 LOG=/tmp/metadaer.log
-SCRAPER=${SCRAPER=r18}
 
-for DONE in $DONE_FILES; do
-  for FILE in $FILES; do
-    if [[ "${FILE%.*}" != "${DONE%.*}" ]]; then
-      echo $(date) >> $LOG
-      echo "Processing $FILE" | tee -a $LOG
-      $CMD $DIR/$FILE | tee -a $LOG
-      sleep $SLEEP
-    else
-      echo "Skipping $FILE, already done"
-    fi
-  done
+for FILE in $FILES; do
+  if [[ "${DONE_FILES}" =~ "${FILE%.*}" ]]; then
+    echo "Skipping $FILE, already done"
+  else
+    echo $(date) >> $LOG
+    echo "Processing $FILE" | tee -a $LOG
+    $CMD $DIR/$FILE | tee -a $LOG
+    sleep $SLEEP
+  fi
 done
